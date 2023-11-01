@@ -1,0 +1,42 @@
+Index: ibus-hangul-1.5.1/src/engine.c
+===================================================================
+--- ibus-hangul-1.5.1.orig/src/engine.c
++++ ibus-hangul-1.5.1/src/engine.c
+@@ -22,6 +22,7 @@
+ #include <config.h>
+ #endif
+ 
++#include <stdio.h>
+ #include <ibus.h>
+ #include <gio/gio.h>
+ #include <hangul.h>
+@@ -217,6 +218,11 @@ static int initial_input_mode = INPUT_MO
+  * whether to use event forwarding workaround
+  */
+ static gboolean use_event_forwarding = TRUE;
++/**
++ * whether to use client commit
++ * See: https://github.com/libhangul/ibus-hangul/pull/68
++ */
++static gboolean use_client_commit = TRUE;
+ 
+ static glong
+ ucschar_strlen (const ucschar* str)
+@@ -1351,7 +1357,17 @@ ibus_hangul_engine_reset (IBusEngine *en
+ {
+     IBusHangulEngine *hangul = (IBusHangulEngine *) engine;
+ 
++    if (use_client_commit) {
++        // ibus-hangul uses
++        // ibus_engine_update_preedit_text_with_mode() function which makes
++        // the preedit string committed automatically when the reset is received
++        // So we don't need to commit the preedit here.
++        hangul_ic_reset (hangul->context);
++        ustring_clear (hangul->preedit);
++    }
++
+     ibus_hangul_engine_flush (hangul);
++
+     IBUS_ENGINE_CLASS (parent_class)->reset (engine);
+ }
+ 
